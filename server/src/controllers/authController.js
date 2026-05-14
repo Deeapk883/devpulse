@@ -44,16 +44,8 @@ export const githubCallback = async (req, res) => {
             }
         );
 
-        res.json({
-            message: "Authentication successful",
-            token,
-            user: {
-                id: userId,
-                username,
-                email,
-                avatarUrl,
-            },
-        });
+        // Redirect to frontend with token
+        res.redirect(`http://localhost:3001/dashboard?token=${token}`);
     } catch (error) {
         console.error(error);
 

@@ -4,6 +4,12 @@ import dotenv from "dotenv";
 import pool from "./config/db.js";
 import passport from "./config/passport.js";
 import authRoutes from "./routes/auth.js";
+import authMiddleware from "./middleware/auth.js";
+import repoRoutes from "./routes/repos.js";
+import commitRoutes from "./routes/commits.js";
+import prRoutes from "./routes/prs.js";
+import summaryRoutes from "./routes/summaries.js";
+import webhookRoutes from "./routes/webhooks.js";
 
 dotenv.config();
 
@@ -13,6 +19,11 @@ app.use(cors());
 app.use(express.json());
 app.use(passport.initialize());
 app.use("/api/auth", authRoutes);
+app.use("/api/repos", repoRoutes);
+app.use("/api/commits", commitRoutes);
+app.use("/api/prs", prRoutes);
+app.use("/api/summaries", summaryRoutes);
+app.use("/api/webhooks", webhookRoutes);
 
 app.get("/api/test", async (req, res) => {
     try {
@@ -29,6 +40,12 @@ app.get("/api/test", async (req, res) => {
             error: "Database connection failed",
         });
     }
+});
+app.get("/api/protected", authMiddleware, (req, res) => {
+    res.json({
+        message: "Protected route accessed",
+        user: req.user,
+    });
 });
 
 const PORT = process.env.PORT || 5000;
