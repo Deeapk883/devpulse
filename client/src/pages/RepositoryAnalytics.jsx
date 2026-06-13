@@ -13,12 +13,14 @@ const RepositoryAnalytics = () => {
     const [prs, setPrs] = useState([]);
     const [summary, setSummary] = useState(null);
     const [generatingSummary, setGeneratingSummary] = useState(false);
+    const [syncing, setSyncing] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchRepoData();
         fetchCommits();
         fetchPRs();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [repoId]);
 
     const fetchRepoData = async () => {
@@ -79,6 +81,23 @@ const RepositoryAnalytics = () => {
         setGeneratingSummary(false);
     };
 
+    const syncLatest = async () => {
+        setSyncing(true);
+        try {
+            await axios.post(`/api/commits/sync/${repoId}`);
+            await axios.post(`/api/prs/sync/${repoId}`);
+            alert('Repository data synced successfully!');
+            fetchRepoData();
+            fetchCommits();
+            fetchPRs();
+        } catch (error) {
+            console.error('Failed to sync repository data:', error);
+            alert('Failed to sync repository data.');
+        } finally {
+            setSyncing(false);
+        }
+    };
+
     if (loading) {
         return (
             <Layout>
@@ -105,10 +124,17 @@ const RepositoryAnalytics = () => {
                             </div>
                         </div>
                         <div className="flex space-x-3">
-                            <button className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors">
-                                Sync Latest
+                            <button 
+                                onClick={syncLatest}
+                                disabled={syncing}
+                                className="bg-primary-600 hover:bg-primary-700 disabled:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                                {syncing ? 'Syncing...' : 'Sync Latest'}
                             </button>
-                            <button className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            <button 
+                                onClick={() => repo?.html_url && window.open(repo.html_url, '_blank')}
+                                className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+                            >
                                 View on GitHub
                             </button>
                         </div>
@@ -240,7 +266,7 @@ const RepositoryAnalytics = () => {
                     </div>
                     {summary ? (
                         <div className="bg-gray-700 rounded-lg p-4">
-                            <p className="text-gray-300 whitespace-pre-wrap">{summary}</p>
+                            <p className="text-gray-300 whitespace-pre-wrap">{summary.summary_text || summary}</p>
                         </div>
                     ) : (
                         <div className="text-center py-8">

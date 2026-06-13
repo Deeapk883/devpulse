@@ -29,7 +29,7 @@ const RepoCard = ({ repo, onTrack, onSync, isTracked }) => {
                             onClick={() => onSync(repo.id)}
                             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
                         >
-                            Sync Commits
+                            Sync Latest
                         </button>
                     ) : null}
                 </div>

@@ -4,7 +4,7 @@
 -- Users Table
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    github_id INT UNIQUE NOT NULL,
+    github_id BIGINT UNIQUE NOT NULL,
     username VARCHAR(255) NOT NULL,
     email VARCHAR(255),
     avatar_url VARCHAR(500),
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS repositories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    github_repo_id INT NOT NULL,
+    github_repo_id BIGINT NOT NULL,
     name VARCHAR(255) NOT NULL,
     full_name VARCHAR(255) NOT NULL,
     html_url VARCHAR(500),
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS commits (
 CREATE TABLE IF NOT EXISTS pull_requests (
     id INT AUTO_INCREMENT PRIMARY KEY,
     repo_id INT NOT NULL,
-    github_pr_id INT NOT NULL,
+    github_pr_id BIGINT NOT NULL,
     title VARCHAR(500) NOT NULL,
     state VARCHAR(50),
     additions INT DEFAULT 0,

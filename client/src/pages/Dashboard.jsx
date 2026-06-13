@@ -119,25 +119,38 @@ const Dashboard = () => {
 
     const trackRepo = async (repo) => {
         try {
-            await axios.post('/api/repos', {
+            const response = await axios.post('/api/repos', {
                 github_repo_id: repo.id,
                 name: repo.name,
                 full_name: repo.full_name,
                 html_url: repo.html_url,
                 description: repo.description,
             });
+            const newRepoId = response.data.repoId;
+            if (newRepoId) {
+                await axios.post(`/api/commits/sync/${newRepoId}`);
+                await axios.post(`/api/prs/sync/${newRepoId}`);
+                alert('Repository tracked and initial sync completed!');
+            } else {
+                alert('Repository tracked successfully!');
+            }
             fetchTrackedRepos();
+            fetchStats();
         } catch (error) {
             console.error('Failed to track repo:', error);
+            alert('Failed to track repository.');
         }
     };
 
-    const syncCommits = async (repoId) => {
+    const syncLatest = async (repoId) => {
         try {
             await axios.post(`/api/commits/sync/${repoId}`);
-            alert('Commits synced successfully!');
+            await axios.post(`/api/prs/sync/${repoId}`);
+            alert('Repository data synced successfully!');
+            fetchStats();
         } catch (error) {
-            console.error('Failed to sync commits:', error);
+            console.error('Failed to sync repository:', error);
+            alert('Failed to sync repository data.');
         }
     };
 
@@ -217,7 +230,7 @@ const Dashboard = () => {
                                 <RepoCard
                                     key={repo.id}
                                     repo={repo}
-                                    onSync={syncCommits}
+                                    onSync={syncLatest}
                                     isTracked={true}
                                 />
                             ))}

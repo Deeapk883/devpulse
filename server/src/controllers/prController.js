@@ -48,7 +48,7 @@ export const syncRepoPRs = async (req, res) => {
             pr.deletions || 0,
             new Date(pr.created_at),
             pr.merged_at ? new Date(pr.merged_at) : null,
-            pr.user.login,
+            pr.user?.login || 'Unknown',
             JSON.stringify(pr.requested_reviewers?.map(r => r.login) || []),
             pr.merged_at ? Math.floor((new Date(pr.merged_at) - new Date(pr.created_at)) / (1000 * 60)) : null,
         ]);

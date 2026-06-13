@@ -35,16 +35,37 @@ const Repositories = () => {
 
     const trackRepo = async (repo) => {
         try {
-            await axios.post('/api/repos', {
+            const response = await axios.post('/api/repos', {
                 github_repo_id: repo.id,
                 name: repo.name,
                 full_name: repo.full_name,
                 html_url: repo.html_url,
                 description: repo.description,
             });
+            const newRepoId = response.data.repoId;
+            if (newRepoId) {
+                await axios.post(`/api/commits/sync/${newRepoId}`);
+                await axios.post(`/api/prs/sync/${newRepoId}`);
+                alert('Repository tracked and initial sync completed!');
+            } else {
+                alert('Repository tracked successfully!');
+            }
             fetchTrackedRepos();
         } catch (error) {
             console.error('Failed to track repo:', error);
+            alert('Failed to track repository.');
+        }
+    };
+
+    const syncLatest = async (repoId) => {
+        try {
+            await axios.post(`/api/commits/sync/${repoId}`);
+            await axios.post(`/api/prs/sync/${repoId}`);
+            alert('Repository data synced successfully!');
+            fetchTrackedRepos();
+        } catch (error) {
+            console.error('Failed to sync repository:', error);
+            alert('Failed to sync repository data.');
         }
     };
 
@@ -89,7 +110,7 @@ const Repositories = () => {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {trackedRepos.map(repo => (
-                                <RepoCard key={repo.id} repo={repo} isTracked={true} />
+                                <RepoCard key={repo.id} repo={repo} isTracked={true} onSync={syncLatest} />
                             ))}
                         </div>
                     )}
