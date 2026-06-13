@@ -66,7 +66,7 @@ export const generateWeeklySummary = async (repoId) => {
         const prompt = buildSummaryPrompt(analytics);
 
         // Generate summary with Gemini
-        const geminiModel = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+        const geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
         let summary;
         let geminiError;
 
@@ -81,10 +81,10 @@ export const generateWeeklySummary = async (repoId) => {
             console.warn('Gemini error:', { message: error.message });
 
             // Try fallback models based on error type
-            if (isModelError(error) && geminiModel !== 'gemini-1.5-flash') {
-                console.log('Model not found, trying gemini-1.5-flash fallback...');
+            if (isModelError(error) && geminiModel !== 'gemini-2.5-flash') {
+                console.log('Model not found, trying gemini-2.5-flash fallback...');
                 try {
-                    summary = await attemptGeminiCompletion('gemini-1.5-flash', prompt);
+                    summary = await attemptGeminiCompletion('gemini-2.5-flash', prompt);
                 } catch (retryError) {
                     geminiError = retryError;
                     console.warn('Fallback model also failed:', retryError.message);
@@ -135,7 +135,7 @@ const attemptGeminiCompletion = async (modelName, prompt) => {
         model: modelName,
         systemInstruction: 'You are an expert engineering analyst creating weekly development summaries. Write in a professional, insightful tone like a senior engineering manager. Focus on productivity, collaboration, and development patterns.',
         generationConfig: {
-            maxOutputTokens: 1000,
+            maxOutputTokens: 8192,
             temperature: 0.7,
         }
     });
