@@ -7,16 +7,21 @@ services:
       - ./server:/app
     depends_on:
       - mysql
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USE_CONTAINER=true
     command: npm run dev
 
   mysql:
     image: mysql:8.0
     restart: always
+    command: --skip-name-resolve
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: devpulse
     ports:
-      - "3307:3306"
+      - "3308:3306"
     volumes:
       - mysql_data:/var/lib/mysql
 

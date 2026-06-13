@@ -1,9 +1,7 @@
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import pool from '../config/db.js';
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export const generateWeeklySummary = async (repoId) => {
     try {
@@ -67,49 +65,47 @@ export const generateWeeklySummary = async (repoId) => {
         // Build prompt
         const prompt = buildSummaryPrompt(analytics);
 
-        // Generate summary with OpenAI
-        const openAiModel = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+        // Generate summary with Gemini
+        const geminiModel = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
         let summary;
-        let openAiError;
+        let geminiError;
 
         try {
-            const completion = await attemptOpenAiCompletion(openAiModel, prompt);
-            summary = completion.choices[0]?.message?.content?.trim();
+            summary = await attemptGeminiCompletion(geminiModel, prompt);
 
             if (!summary) {
-                throw new Error('OpenAI returned no summary text');
+                throw new Error('Gemini returned no summary text');
             }
         } catch (error) {
-            openAiError = error;
-            console.warn('OpenAI error:', { code: error?.error?.code, message: error.message });
+            geminiError = error;
+            console.warn('Gemini error:', { message: error.message });
 
             // Try fallback models based on error type
-            if (isModelError(error) && openAiModel !== 'gpt-4o-mini') {
-                console.log('Model not found, trying gpt-4o-mini fallback...');
+            if (isModelError(error) && geminiModel !== 'gemini-1.5-flash') {
+                console.log('Model not found, trying gemini-1.5-flash fallback...');
                 try {
-                    const completion = await attemptOpenAiCompletion('gpt-4o-mini', prompt);
-                    summary = completion.choices[0]?.message?.content?.trim();
+                    summary = await attemptGeminiCompletion('gemini-1.5-flash', prompt);
                 } catch (retryError) {
-                    openAiError = retryError;
+                    geminiError = retryError;
                     console.warn('Fallback model also failed:', retryError.message);
                 }
             }
 
             // If still no summary, we'll use template
             if (!summary && isQuotaError(error)) {
-                console.warn('OpenAI quota exceeded - using template');
-                openAiError = new Error('OpenAI quota exceeded');
+                console.warn('Gemini quota exceeded - using template');
+                geminiError = new Error('Gemini quota exceeded');
             }
 
             if (!summary && isRateLimitError(error)) {
-                console.warn('OpenAI rate limited - using template');
-                openAiError = new Error('OpenAI rate limit exceeded');
+                console.warn('Gemini rate limited - using template');
+                geminiError = new Error('Gemini rate limit exceeded');
             }
         }
 
         if (!summary) {
-            console.warn('OpenAI summary generation failed; using fallback summary.', openAiError?.message);
-            summary = buildFallbackSummary(analytics, openAiError);
+            console.warn('Gemini summary generation failed; using fallback summary.', geminiError?.message);
+            summary = buildFallbackSummary(analytics, geminiError);
         }
 
         // Store summary in database
@@ -134,41 +130,44 @@ export const generateWeeklySummary = async (repoId) => {
     }
 };
 
-const attemptOpenAiCompletion = async (model, prompt) => {
-    return openai.chat.completions.create({
-        model,
-        messages: [
-            {
-                role: 'system',
-                content: 'You are an expert engineering analyst creating weekly development summaries. Write in a professional, insightful tone like a senior engineering manager. Focus on productivity, collaboration, and development patterns.',
-            },
-            {
-                role: 'user',
-                content: prompt,
-            },
-        ],
-        max_tokens: 1000,
-        temperature: 0.7,
+const attemptGeminiCompletion = async (modelName, prompt) => {
+    const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction: 'You are an expert engineering analyst creating weekly development summaries. Write in a professional, insightful tone like a senior engineering manager. Focus on productivity, collaboration, and development patterns.',
+        generationConfig: {
+            maxOutputTokens: 1000,
+            temperature: 0.7,
+        }
     });
+    const result = await model.generateContent(prompt);
+    return result.response.text();
 };
 
 const isRateLimitError = (error) => {
-    const errorCode = error?.error?.code || error?.code;
-    return errorCode === 'rate_limit_exceeded' ||
-        error?.status === 429 ||
-        (error?.message && error.message.includes('rate limit'));
+    return error?.status === 429 ||
+        (error?.message && (
+            error.message.toLowerCase().includes('rate limit') ||
+            error.message.toLowerCase().includes('exhausted') ||
+            error.message.toLowerCase().includes('429')
+        ));
 };
 
 const isQuotaError = (error) => {
-    const errorCode = error?.error?.code || error?.code;
-    return errorCode === 'insufficient_quota' ||
-        (error?.message && error.message.includes('quota'));
+    return error?.status === 429 ||
+        (error?.message && (
+            error.message.toLowerCase().includes('quota') ||
+            error.message.toLowerCase().includes('exhausted') ||
+            error.message.toLowerCase().includes('429')
+        ));
 };
 
 const isModelError = (error) => {
-    const errorCode = error?.error?.code || error?.code;
-    return errorCode === 'model_not_found' ||
-        (error?.message && error.message.includes('model'));
+    return error?.status === 404 ||
+        (error?.message && (
+            error.message.toLowerCase().includes('model') ||
+            error.message.toLowerCase().includes('not found') ||
+            error.message.toLowerCase().includes('404')
+        ));
 };
 
 const buildFallbackSummary = (analytics, error) => {

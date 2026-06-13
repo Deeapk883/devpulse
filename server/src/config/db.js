@@ -21,31 +21,44 @@ const tryConnection = async (connectionPool) => {
     connection.release();
 };
 
-try {
-    await tryConnection(pool);
-    console.log(`Connected to MySQL at ${dbConfig.host}:${dbConfig.port}`);
-} catch (error) {
-    console.warn(`Unable to connect to MySQL at ${dbConfig.host}:${dbConfig.port}:`, error.message);
+const maxRetries = 10;
+const retryDelay = 2000; // 2 seconds
+let connected = false;
 
-    // Local development support for Docker-published MySQL on port 3307
-    if ((dbConfig.host === "mysql" || dbConfig.host === "localhost") && !process.env.DB_USE_CONTAINER) {
-        const fallbackConfig = {
-            ...dbConfig,
-            host: "127.0.0.1",
-            port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3307,
-        };
+for (let i = 1; i <= maxRetries; i++) {
+    try {
+        await tryConnection(pool);
+        console.log(`Connected to MySQL at ${dbConfig.host}:${dbConfig.port}`);
+        connected = true;
+        break;
+    } catch (error) {
+        console.warn(`[Attempt ${i}/${maxRetries}] Unable to connect to MySQL at ${dbConfig.host}:${dbConfig.port}: ${error.message}`);
+        if (i < maxRetries) {
+            console.log(`Retrying in ${retryDelay / 1000}s...`);
+            await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        } else {
+            // Local development support for Docker-published MySQL on port 3307
+            if ((dbConfig.host === "mysql" || dbConfig.host === "localhost") && !process.env.DB_USE_CONTAINER) {
+                const fallbackConfig = {
+                    ...dbConfig,
+                    host: "127.0.0.1",
+                    port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3307,
+                };
 
-        const fallbackPool = mysql.createPool(fallbackConfig);
-        try {
-            await tryConnection(fallbackPool);
-            console.log(`Connected to MySQL fallback at ${fallbackConfig.host}:${fallbackConfig.port}`);
-            pool = fallbackPool;
-        } catch (fallbackError) {
-            console.error(`Fallback MySQL connection failed at ${fallbackConfig.host}:${fallbackConfig.port}:`, fallbackError.message);
-            throw fallbackError;
+                const fallbackPool = mysql.createPool(fallbackConfig);
+                try {
+                    await tryConnection(fallbackPool);
+                    console.log(`Connected to MySQL fallback at ${fallbackConfig.host}:${fallbackConfig.port}`);
+                    pool = fallbackPool;
+                    connected = true;
+                } catch (fallbackError) {
+                    console.error(`Fallback MySQL connection failed at ${fallbackConfig.host}:${fallbackConfig.port}:`, fallbackError.message);
+                    throw fallbackError;
+                }
+            } else {
+                throw error;
+            }
         }
-    } else {
-        throw error;
     }
 }
 

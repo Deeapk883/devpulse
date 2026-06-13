@@ -8,7 +8,7 @@
 - [x] **Repository Metadata** - `getRepo()` now fetches stars/forks/language from GitHub
 - [x] **Real-Time Polling** - Dashboard polls every 30 seconds for updates
 - [x] **Error Middleware** - Global error handler returns clean JSON responses
-- [x] **OpenAI Fallback** - Proper error handling for quota/rate limits/model errors
+- [x] **Gemini Fallback** - Proper error handling for quota/rate limits/model errors
 - [x] **Error Boundaries** - Frontend React error boundary prevents full page crashes
 - [x] **RepoCard Schema** - Handles both GitHub and tracked repo field formats
 - [x] **Webhook All Branches** - Accepts commits from feature branches (not just main/master)
@@ -119,7 +119,7 @@
 [ ] GET /api/summaries/:repoId - Lists past summaries
 [ ] POST /api/summaries/generate/:repoId - Generates new summary
 [ ] Summary includes week_start, week_end, summary_text
-[ ] Fallback summary generated if OpenAI fails
+[ ] Fallback summary generated if Gemini fails
 [ ] Error message returned if generation fails
 ```
 
@@ -180,7 +180,7 @@
 [ ] API error 500 → User sees readable error message
 [ ] Network error → Page shows error state with retry
 [ ] Invalid token → User redirected to login
-[ ] OpenAI quota exceeded → Fallback summary shown
+[ ] Gemini quota exceeded → Fallback summary shown
 [ ] Database connection failed → Clear error message
 ```
 
@@ -207,7 +207,7 @@
 ```
 [ ] .env file has all required variables
 [ ] GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET valid
-[ ] OPENAI_API_KEY valid
+[ ] GEMINI_API_KEY valid
 [ ] WEBHOOK_SECRET set (matching GitHub settings)
 [ ] JWT_SECRET unique and secure
 [ ] DB credentials match docker-compose
@@ -274,7 +274,7 @@ Before marking as production-ready:
 - [ ] Environment variables configured correctly
 - [ ] Webhooks configured in GitHub repo settings
 - [ ] GitHub OAuth app credentials verified
-- [ ] OpenAI API key valid and has quota
+- [ ] Gemini API key valid and has quota
 - [ ] Team trained on common issues
 - [ ] Monitoring/alerting set up
 - [ ] Backup/recovery plan documented
@@ -297,7 +297,7 @@ Before marking as production-ready:
 3. Ensure WEBHOOK_SECRET matches
 4. Check backend webhook logs
 
-### OpenAI summaries failing
+### Gemini summaries failing
 1. Verify API key is valid
 2. Check account has available quota
 3. Review error message in logs

@@ -6,7 +6,7 @@ import RepoCard from '../components/RepoCard';
 import StatsCard from '../components/StatsCard';
 
 const Dashboard = () => {
-    const { user, setUser, logout } = useContext(AuthContext);
+    const { user, setUser } = useContext(AuthContext);
     const [repos, setRepos] = useState([]);
     const [trackedRepos, setTrackedRepos] = useState([]);
     const [stats, setStats] = useState({
@@ -35,6 +35,7 @@ const Dashboard = () => {
             // Token already in localStorage or missing, proceed with fetching
             initializeDashboard();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Set up polling for real-time updates every 30 seconds

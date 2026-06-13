@@ -46,13 +46,23 @@ export const errorHandler = (err, req, res, next) => {
         response.status = 401;
     }
 
-    // Handle OpenAI errors
-    if (err.code === 'insufficient_quota') {
-        response.error = 'OpenAI quota exceeded. Please try again later.';
+    // Handle Gemini errors
+    if (err.code === 'insufficient_quota' || 
+        (err.message && (
+            err.message.toLowerCase().includes('quota') || 
+            err.message.toLowerCase().includes('exhausted') || 
+            err.message.toLowerCase().includes('429')
+        ))) {
+        response.error = 'Gemini quota exceeded. Please try again later.';
         response.status = 429;
     }
 
-    if (err.code === 'model_not_found') {
+    if (err.code === 'model_not_found' || 
+        (err.message && (
+            err.message.toLowerCase().includes('model') || 
+            err.message.toLowerCase().includes('not found') ||
+            err.message.toLowerCase().includes('404')
+        ))) {
         response.error = 'AI model not available. Using fallback.';
         response.status = 503;
     }

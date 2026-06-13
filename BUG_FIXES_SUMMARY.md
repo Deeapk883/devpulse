@@ -100,7 +100,7 @@
 
 **Fix Applied:**
 - Created `errorHandler.js` middleware
-- Handles all error types: database errors, JWT errors, OpenAI errors, GitHub rate limits
+- Handles all error types: database errors, JWT errors, Gemini errors, GitHub rate limits
 - Returns structured JSON: `{ error, status, details (dev only) }`
 - Added 404 handler for undefined routes
 - Registered as last middleware in app.js
@@ -115,17 +115,17 @@
 
 ---
 
-### 6. OpenAI Error Handling (HIGH) ✅
+### 6. Gemini Error Handling (HIGH) ✅
 **Issue:** Summary generation failed silently on quota/model errors; no fallback or user feedback.
 
-**Root Cause:** Error detection checked `error.code` instead of `error.error.code` (OpenAI API structure).
+**Root Cause:** Error detection checked `error.code` instead of `error.error.code` (OpenAI API structure). Refactored to catch Gemini error codes, status values, and messages.
 
 **Fix Applied:**
 - Added helper functions: `isQuotaError()`, `isModelError()`, `isRateLimitError()`
-- Properly detects OpenAI error codes from nested `error.error` object
+- Properly detects Gemini error status and message formats
 - Implements smart fallback:
-  - Try primary model (gpt-4o-mini)
-  - Fallback to gpt-4o-mini if model_not_found
+  - Try primary model (gemini-1.5-flash)
+  - Fallback to gemini-1.5-flash if model_not_found
   - Generate template summary if all models fail
 - Clear error messages returned to frontend
 
@@ -252,7 +252,7 @@
 1. Initialize database: `mysql < server/database/schema.sql`
 2. Configure `.env` with GitHub OAuth credentials
 3. Set WEBHOOK_SECRET in GitHub repo settings
-4. Verify OpenAI API key has quota
+4. Verify Gemini API key has quota
 5. Test webhook delivery from GitHub
 
 ### Known Limitations:
